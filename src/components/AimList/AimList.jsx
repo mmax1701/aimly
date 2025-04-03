@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AimList = ({ aims }) => {
+const AimList = ({ aims, handleComplete, handleDelete, handleEditStart }) => {
   return (
     <div>
       <ul>
@@ -9,6 +9,19 @@ const AimList = ({ aims }) => {
             <div>{aim.title}</div>
             <div>{aim.description}</div>
             <div>{aim.photo}</div>
+            <div>
+              <button onClick={() => handleDelete(aim.id)}>Видалити</button>
+              {!aim.completed && (
+                <button onClick={() => handleEditStart(aim.id)}>
+                  Редагувати
+                </button>
+              )}
+            </div>
+            <div>
+              {!aim.completed && (
+                <button onClick={() => handleComplete(aim.id)}>Виконана</button>
+              )}
+            </div>
           </li>
         ))}
       </ul>
