@@ -3,13 +3,16 @@ import Modal from 'react-modal';
 
 import aim from '../../aim.json';
 import AimList from '../AimList/AimList';
-import EditAimForm from '../EditAimForm/EditAimForm'; // Импортируем форму
-import { nanoid } from 'nanoid';
+import EditAimForm from '../EditAimForm/EditAimForm';
 import AddAim from '../AddAim/AddAim';
+import { nanoid } from 'nanoid';
+
+Modal.setAppElement('#root');
 
 const Home = () => {
   const [aims, setAims] = useState(aim);
   const [editingAim, setEditingAim] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const handleComplete = aimId => {
     setAims(prevAims =>
@@ -25,7 +28,8 @@ const Home = () => {
 
   const handleAddAim = newAim => {
     const aimWithId = { ...newAim, id: nanoid() };
-    setAims(prevAims => [...prevAims, aimWithId]);
+    setAims(prevAims => [aimWithId, ...prevAims]);
+    setIsAddModalOpen(false);
   };
 
   const handleEditStart = aimId => {
@@ -46,11 +50,23 @@ const Home = () => {
     setEditingAim(null);
   };
 
+  const handleAddModalOpen = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddModalClose = () => {
+    setIsAddModalOpen(false);
+  };
+
   return (
     <div>
       <div>
-        <div>x</div>
         <p>Привіт, name</p>
+      </div>
+      <div>
+        <button type="button" onClick={handleAddModalOpen}>
+          Додати ціль
+        </button>
       </div>
 
       {aims.length > 0 ? (
@@ -81,11 +97,11 @@ const Home = () => {
         </div>
       ) : (
         <div>
-          <div>Додай свою ціль</div>
-          <AddAim onAddAim={handleAddAim} />
+          <p>Наразі список з цілями порожній</p>
         </div>
       )}
 
+      {/* Модальное окно редактирования */}
       <Modal isOpen={!!editingAim} onRequestClose={handleEditCancel}>
         {editingAim && (
           <EditAimForm
@@ -94,6 +110,11 @@ const Home = () => {
             onCancel={handleEditCancel}
           />
         )}
+      </Modal>
+
+      {/* Модальное окно добавления */}
+      <Modal isOpen={isAddModalOpen} onRequestClose={handleAddModalClose}>
+        <AddAim onSave={handleAddAim} onCancel={handleAddModalClose} />
       </Modal>
     </div>
   );
