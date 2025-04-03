@@ -1,14 +1,17 @@
 import { initializeApp } from 'firebase/app';
 import { getStorage } from 'firebase/storage';
+import { getAnalytics } from 'firebase/analytics';
 
 const firebaseConfig = {
-  apiKey: 'your_api_key',
-  authDomain: 'your_project_id.firebaseapp.com',
-  projectId: 'your_project_id',
-  storageBucket: 'your_project_id.appspot.com',
-  messagingSenderId: 'your_sender_id',
-  appId: 'your_app_id',
+  apiKey: 'AIzaSyBRtX8jAObZVn-TeQY23C8mjI-B_8gmX9s',
+  authDomain: 'aimly-b0f7a.firebaseapp.com',
+  projectId: 'aimly-b0f7a',
+  storageBucket: 'aimly-b0f7a.firebasestorage.app',
+  messagingSenderId: '291863592707',
+  appId: '1:291863592707:web:fb9ae8770086951b913336',
+  measurementId: 'G-47KKW3NF8Y',
 };
 
 const app = initializeApp(firebaseConfig);
 export const storage = getStorage(app);
+const analytics = getAnalytics(app);
