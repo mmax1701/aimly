@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
-
-import aim from '../../aim.json';
+import { auth, googleAuthProvider } from '../../firebase';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import AimList from '../AimList/AimList';
 import EditAimForm from '../EditAimForm/EditAimForm';
 import AddAim from '../AddAim/AddAim';
@@ -10,14 +10,20 @@ import { nanoid } from 'nanoid';
 Modal.setAppElement('#root');
 
 const Home = () => {
-  const [aims, setAims] = useState(aim);
+  const [aims, setAims] = useState([]);
   const [editingAim, setEditingAim] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return unsubscribe;
+  }, []);
 
   const handleComplete = aimId => {
     setAims(prevAims =>
       prevAims.map(aim =>
-        aim.id === aimId ? { ...aim, completed: true } : aim
+        aim.id === aimId ? { ...aim, completed: !aim.completed } : aim
       )
     );
   };
@@ -27,8 +33,8 @@ const Home = () => {
   };
 
   const handleAddAim = newAim => {
-    const aimWithId = { ...newAim, id: nanoid() };
-    setAims(prevAims => [aimWithId, ...prevAims]);
+    const aimWithId = { ...newAim, id: nanoid(), completed: false };
+    setAims(prev => [aimWithId, ...prev]);
     setIsAddModalOpen(false);
   };
 
@@ -44,38 +50,48 @@ const Home = () => {
   };
 
   const handleEditSave = updatedAim => {
-    setAims(prevAims =>
-      prevAims.map(aim => (aim.id === updatedAim.id ? updatedAim : aim))
+    setAims(prev =>
+      prev.map(aim => (aim.id === updatedAim.id ? updatedAim : aim))
     );
     setEditingAim(null);
   };
 
-  const handleAddModalOpen = () => {
-    setIsAddModalOpen(true);
+  const handleSignIn = async () => {
+    try {
+      await signInWithPopup(auth, googleAuthProvider);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleAddModalClose = () => {
-    setIsAddModalOpen(false);
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
     <div>
       <div>
-        <p>Привіт, name</p>
+        <p>Привіт, {user ? user.displayName : 'Гість'}</p>
+        {user ? (
+          <button onClick={handleSignOut}>Вийти</button>
+        ) : (
+          <button onClick={handleSignIn}>Увійти з Google</button>
+        )}
       </div>
-      <div>
-        <button type="button" onClick={handleAddModalOpen}>
-          Додати ціль
-        </button>
-      </div>
+
+      <button onClick={() => setIsAddModalOpen(true)}>Додати ціль</button>
 
       {aims.length > 0 ? (
         <div>
-          {aims.some(aim => !aim.completed) && (
+          {aims.some(a => !a.completed) && (
             <>
-              <div>Заплановані цілі</div>
+              <h3>Заплановані</h3>
               <AimList
-                aims={aims.filter(aim => !aim.completed)}
+                aims={aims.filter(a => !a.completed)}
                 handleComplete={handleComplete}
                 handleDelete={handleDelete}
                 handleEditStart={handleEditStart}
@@ -83,11 +99,11 @@ const Home = () => {
             </>
           )}
 
-          {aims.some(aim => aim.completed) && (
+          {aims.some(a => a.completed) && (
             <>
-              <div>Виконані цілі</div>
+              <h3>Виконані</h3>
               <AimList
-                aims={aims.filter(aim => aim.completed)}
+                aims={aims.filter(a => a.completed)}
                 handleComplete={handleComplete}
                 handleDelete={handleDelete}
                 handleEditStart={handleEditStart}
@@ -96,12 +112,9 @@ const Home = () => {
           )}
         </div>
       ) : (
-        <div>
-          <p>Наразі список з цілями порожній</p>
-        </div>
+        <p>Наразі список з цілями порожній</p>
       )}
 
-      {/* Модальное окно редактирования */}
       <Modal isOpen={!!editingAim} onRequestClose={handleEditCancel}>
         {editingAim && (
           <EditAimForm
@@ -112,9 +125,14 @@ const Home = () => {
         )}
       </Modal>
 
-      {/* Модальное окно добавления */}
-      <Modal isOpen={isAddModalOpen} onRequestClose={handleAddModalClose}>
-        <AddAim onSave={handleAddAim} onCancel={handleAddModalClose} />
+      <Modal
+        isOpen={isAddModalOpen}
+        onRequestClose={() => setIsAddModalOpen(false)}
+      >
+        <AddAim
+          onSave={handleAddAim}
+          onCancel={() => setIsAddModalOpen(false)}
+        />
       </Modal>
     </div>
   );

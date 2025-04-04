@@ -3,48 +3,33 @@ import { storage } from '../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const AddAim = ({ onSave, onCancel }) => {
-  const [newAim, setNewAim] = useState({
-    title: '',
-    description: '',
-    photo: null,
-  });
-  const [uploading, setUploading] = useState(false);
+  const [goal, setGoal] = useState('');
+  const [description, setDescription] = useState('');
+  const [image, setImage] = useState(null);
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setNewAim(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = e => {
-    const file = e.target.files[0];
-    if (file) {
-      setNewAim(prev => ({ ...prev, photo: file }));
-    }
-  };
+  const handleFileChange = e => setImage(e.target.files[0]);
 
   const handleSubmit = async e => {
     e.preventDefault();
 
-    if (!newAim.title.trim() || !newAim.description.trim()) return;
-
-    setUploading(true);
-
-    let photoURL = '';
-
-    if (newAim.photo) {
-      const storageRef = ref(storage, `aims/${newAim.photo.name}`);
-      await uploadBytes(storageRef, newAim.photo);
-      photoURL = await getDownloadURL(storageRef);
+    let imageURL = '';
+    if (image) {
+      const storageRef = ref(storage, `images/${image.name}`);
+      await uploadBytes(storageRef, image);
+      imageURL = await getDownloadURL(storageRef);
     }
 
-    const aimData = {
-      title: newAim.title,
-      description: newAim.description,
-      photo: photoURL,
+    const newAim = {
+      title: goal,
+      description,
+      imageURL,
+      completed: false,
     };
 
-    onSave(aimData);
-    setUploading(false);
+    onSave(newAim);
+    setGoal('');
+    setDescription('');
+    setImage(null);
   };
 
   return (
@@ -52,34 +37,18 @@ const AddAim = ({ onSave, onCancel }) => {
       <h2>Нова ціль</h2>
       <input
         type="text"
-        name="title"
-        placeholder="Назва цілі"
-        value={newAim.title}
-        onChange={handleChange}
+        placeholder="Назва"
+        value={goal}
+        onChange={e => setGoal(e.target.value)}
+        required
       />
       <textarea
-        name="description"
-        placeholder="Опис цілі"
-        value={newAim.description}
-        onChange={handleChange}
+        placeholder="Опис"
+        value={description}
+        onChange={e => setDescription(e.target.value)}
       />
-
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-
-      {newAim.photo && (
-        <div>
-          <p>Завантажено: {newAim.photo.name}</p>
-          <img
-            src={URL.createObjectURL(newAim.photo)}
-            alt="Preview"
-            width="100"
-          />
-        </div>
-      )}
-
-      <button type="submit" disabled={uploading}>
-        {uploading ? 'Завантаження...' : 'Додати'}
-      </button>
+      <input type="file" onChange={handleFileChange} />
+      <button type="submit">Зберегти</button>
       <button type="button" onClick={onCancel}>
         Скасувати
       </button>
