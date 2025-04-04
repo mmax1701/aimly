@@ -1,69 +1,121 @@
-import React, { useEffect, useState } from 'react';
-import {
-  collection,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  doc,
-} from 'firebase/firestore';
-import { db } from '../../firebase';
-import AddAim from '../AddAim/AddAim';
+import React, { useState } from 'react';
+import Modal from 'react-modal';
+
+import aim from '../../aim.json';
 import AimList from '../AimList/AimList';
+import EditAimForm from '../EditAimForm/EditAimForm';
+import AddAim from '../AddAim/AddAim';
+import { nanoid } from 'nanoid';
+
+Modal.setAppElement('#root');
 
 const Home = () => {
-  const [aims, setAims] = useState([]);
-  const [addingAim, setAddingAim] = useState(false);
+  const [aims, setAims] = useState(aim);
   const [editingAim, setEditingAim] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const fetchAims = async () => {
-    const querySnapshot = await getDocs(collection(db, 'goals'));
-    const goalsData = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setAims(goalsData);
+  const handleComplete = aimId => {
+    setAims(prevAims =>
+      prevAims.map(aim =>
+        aim.id === aimId ? { ...aim, completed: true } : aim
+      )
+    );
   };
 
-  useEffect(() => {
-    fetchAims();
-  }, []);
-
-  const handleComplete = async id => {
-    const aimRef = doc(db, 'goals', id);
-    const aim = aims.find(goal => goal.id === id);
-    await updateDoc(aimRef, { completed: !aim.completed });
-    fetchAims();
+  const handleDelete = aimId => {
+    setAims(prevAims => prevAims.filter(aim => aim.id !== aimId));
   };
 
-  const handleDelete = async id => {
-    await deleteDoc(doc(db, 'goals', id));
-    fetchAims();
+  const handleAddAim = newAim => {
+    const aimWithId = { ...newAim, id: nanoid() };
+    setAims(prevAims => [aimWithId, ...prevAims]);
+    setIsAddModalOpen(false);
   };
 
-  const handleEditStart = aim => {
-    setEditingAim(aim);
-    setAddingAim(true);
+  const handleEditStart = aimId => {
+    const aimToEdit = aims.find(aim => aim.id === aimId);
+    if (aimToEdit) {
+      setEditingAim(aimToEdit);
+    }
   };
 
-  const handleCancel = () => {
-    setAddingAim(false);
+  const handleEditCancel = () => {
     setEditingAim(null);
-    fetchAims();
+  };
+
+  const handleEditSave = updatedAim => {
+    setAims(prevAims =>
+      prevAims.map(aim => (aim.id === updatedAim.id ? updatedAim : aim))
+    );
+    setEditingAim(null);
+  };
+
+  const handleAddModalOpen = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddModalClose = () => {
+    setIsAddModalOpen(false);
   };
 
   return (
     <div>
-      <h1>Мої цілі</h1>
-      {!addingAim && (
-        <button onClick={() => setAddingAim(true)}>Додати ціль</button>
+      <div>
+        <p>Привіт, name</p>
+      </div>
+      <div>
+        <button type="button" onClick={handleAddModalOpen}>
+          Додати ціль
+        </button>
+      </div>
+
+      {aims.length > 0 ? (
+        <div>
+          {aims.some(aim => !aim.completed) && (
+            <>
+              <div>Заплановані цілі</div>
+              <AimList
+                aims={aims.filter(aim => !aim.completed)}
+                handleComplete={handleComplete}
+                handleDelete={handleDelete}
+                handleEditStart={handleEditStart}
+              />
+            </>
+          )}
+
+          {aims.some(aim => aim.completed) && (
+            <>
+              <div>Виконані цілі</div>
+              <AimList
+                aims={aims.filter(aim => aim.completed)}
+                handleComplete={handleComplete}
+                handleDelete={handleDelete}
+                handleEditStart={handleEditStart}
+              />
+            </>
+          )}
+        </div>
+      ) : (
+        <div>
+          <p>Наразі список з цілями порожній</p>
+        </div>
       )}
-      {addingAim && <AddAim onCancel={handleCancel} />}
-      <AimList
-        aims={aims}
-        handleComplete={handleComplete}
-        handleDelete={handleDelete}
-        handleEditStart={handleEditStart}
-      />
+
+      {/* Модальное окно редактирования */}
+      <Modal isOpen={!!editingAim} onRequestClose={handleEditCancel}>
+        {editingAim && (
+          <EditAimForm
+            aim={editingAim}
+            onSave={handleEditSave}
+            onCancel={handleEditCancel}
+          />
+        )}
+      </Modal>
+
+      {/* Модальное окно добавления */}
+      <Modal isOpen={isAddModalOpen} onRequestClose={handleAddModalClose}>
+        <AddAim onSave={handleAddAim} onCancel={handleAddModalClose} />
+      </Modal>
     </div>
   );
 };

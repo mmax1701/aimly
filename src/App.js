@@ -1,24 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
 import Home from './components/Home/Home';
-import Login from './components/Login/Login';
-import { auth } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import StartPage from './components/StartPage/StartPage';
 
 function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
 
   return (
-    <div className="App">
-      {user ? <Home user={user} /> : <Login setUser={setUser} />}
-    </div>
+    <div className="App">{isAuthenticated ? <Home /> : <StartPage />}</div>
   );
 }
 

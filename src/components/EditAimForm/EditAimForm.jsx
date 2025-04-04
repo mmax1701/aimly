@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 const EditAimForm = ({ aim, onSave, onCancel }) => {
-  const [editedAim, setEditedAim] = useState({ ...aim });
+  const [editedAim, setEditedAim] = useState(aim);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -16,10 +16,10 @@ const EditAimForm = ({ aim, onSave, onCancel }) => {
   return (
     <form onSubmit={handleSubmit}>
       <input
+        type="text"
         name="title"
         value={editedAim.title}
         onChange={handleChange}
-        required
       />
       <textarea
         name="description"

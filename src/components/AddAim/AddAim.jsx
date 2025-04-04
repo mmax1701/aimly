@@ -1,76 +1,89 @@
 import React, { useState } from 'react';
-import { db, auth } from '../../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { storage } from '../../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-const AddAim = ({ onCancel }) => {
-  const [goalText, setGoalText] = useState('');
-  const [description, setDescription] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+const AddAim = ({ onSave, onCancel }) => {
+  const [newAim, setNewAim] = useState({
+    title: '',
+    description: '',
+    photo: null,
+  });
+  const [uploading, setUploading] = useState(false);
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    if (!goalText) return;
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setNewAim(prev => ({ ...prev, [name]: value }));
+  };
 
-    setIsSaving(true);
-
-    try {
-      const user = auth.currentUser;
-
-      const newGoal = {
-        title: goalText,
-        description,
-        completed: false,
-        createdAt: serverTimestamp(),
-        userId: user?.uid || null,
-      };
-
-      await addDoc(collection(db, 'goals'), newGoal);
-    } catch (error) {
-      console.error('Ошибка при сохранении цели:', error);
-      alert('Не удалось сохранить ціль.');
-    } finally {
-      setIsSaving(false);
-      setGoalText('');
-      setDescription('');
-      onCancel();
+  const handleFileChange = e => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewAim(prev => ({ ...prev, photo: file }));
     }
   };
 
+  const handleSubmit = async e => {
+    e.preventDefault();
+
+    if (!newAim.title.trim() || !newAim.description.trim()) return;
+
+    setUploading(true);
+
+    let photoURL = '';
+
+    if (newAim.photo) {
+      const storageRef = ref(storage, `aims/${newAim.photo.name}`);
+      await uploadBytes(storageRef, newAim.photo);
+      photoURL = await getDownloadURL(storageRef);
+    }
+
+    const aimData = {
+      title: newAim.title,
+      description: newAim.description,
+      photo: photoURL,
+    };
+
+    onSave(aimData);
+    setUploading(false);
+  };
+
   return (
-    <div>
-      <h2>Додати нову ціль</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>
-            Назва цілі:
-            <input
-              type="text"
-              value={goalText}
-              onChange={e => setGoalText(e.target.value)}
-              required
-            />
-          </label>
-        </div>
+    <form onSubmit={handleSubmit}>
+      <h2>Нова ціль</h2>
+      <input
+        type="text"
+        name="title"
+        placeholder="Назва цілі"
+        value={newAim.title}
+        onChange={handleChange}
+      />
+      <textarea
+        name="description"
+        placeholder="Опис цілі"
+        value={newAim.description}
+        onChange={handleChange}
+      />
 
-        <div>
-          <label>
-            Опис:
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              rows="3"
-            />
-          </label>
-        </div>
+      <input type="file" accept="image/*" onChange={handleFileChange} />
 
-        <button type="submit" disabled={isSaving}>
-          {isSaving ? 'Збереження...' : 'Зберегти'}
-        </button>
-        <button type="button" onClick={onCancel}>
-          Скасувати
-        </button>
-      </form>
-    </div>
+      {newAim.photo && (
+        <div>
+          <p>Завантажено: {newAim.photo.name}</p>
+          <img
+            src={URL.createObjectURL(newAim.photo)}
+            alt="Preview"
+            width="100"
+          />
+        </div>
+      )}
+
+      <button type="submit" disabled={uploading}>
+        {uploading ? 'Завантаження...' : 'Додати'}
+      </button>
+      <button type="button" onClick={onCancel}>
+        Скасувати
+      </button>
+    </form>
   );
 };
 
