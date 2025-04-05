@@ -1,89 +1,34 @@
-import React, { useState } from 'react';
-import { storage } from '../../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import React from 'react';
 
-const AddAim = ({ onSave, onCancel }) => {
-  const [newAim, setNewAim] = useState({
-    title: '',
-    description: '',
-    photo: null,
-  });
-  const [uploading, setUploading] = useState(false);
-
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setNewAim(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = e => {
-    const file = e.target.files[0];
-    if (file) {
-      setNewAim(prev => ({ ...prev, photo: file }));
-    }
-  };
-
-  const handleSubmit = async e => {
-    e.preventDefault();
-
-    if (!newAim.title.trim() || !newAim.description.trim()) return;
-
-    setUploading(true);
-
-    let photoURL = '';
-
-    if (newAim.photo) {
-      const storageRef = ref(storage, `aims/${newAim.photo.name}`);
-      await uploadBytes(storageRef, newAim.photo);
-      photoURL = await getDownloadURL(storageRef);
-    }
-
-    const aimData = {
-      title: newAim.title,
-      description: newAim.description,
-      photo: photoURL,
-    };
-
-    onSave(aimData);
-    setUploading(false);
-  };
-
+const AddAim = ({ onAddAim }) => {
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Нова ціль</h2>
-      <input
-        type="text"
-        name="title"
-        placeholder="Назва цілі"
-        value={newAim.title}
-        onChange={handleChange}
-      />
-      <textarea
-        name="description"
-        placeholder="Опис цілі"
-        value={newAim.description}
-        onChange={handleChange}
-      />
-
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-
-      {newAim.photo && (
+    <div>
+      <h1>Додати ціль</h1>
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const newAim = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+          };
+          onAddAim(newAim);
+        }}
+      >
         <div>
-          <p>Завантажено: {newAim.photo.name}</p>
-          <img
-            src={URL.createObjectURL(newAim.photo)}
-            alt="Preview"
-            width="100"
-          />
+          <label htmlFor="title">Назва цілі:</label>
+          <input type="text" id="title" name="title" required />
         </div>
-      )}
-
-      <button type="submit" disabled={uploading}>
-        {uploading ? 'Завантаження...' : 'Додати'}
-      </button>
-      <button type="button" onClick={onCancel}>
-        Скасувати
-      </button>
-    </form>
+        <div>
+          <label htmlFor="description">Опис:</label>
+          <textarea id="description" name="description" required></textarea>
+        </div>
+        <button type="submit">Додати ціль</button>
+      </form>
+      <div>
+        <button type="button">Скасувати</button>
+      </div>
+    </div>
   );
 };
 
