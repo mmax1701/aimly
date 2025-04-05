@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AddAim = ({ onAddAim }) => {
+const AddAim = ({ onAddAim, onCancel }) => {
   return (
     <div>
       <h1>Додати ціль</h1>
@@ -26,7 +26,9 @@ const AddAim = ({ onAddAim }) => {
         <button type="submit">Додати ціль</button>
       </form>
       <div>
-        <button type="button">Скасувати</button>
+        <button type="button" onClick={onCancel}>
+          Скасувати
+        </button>
       </div>
     </div>
   );

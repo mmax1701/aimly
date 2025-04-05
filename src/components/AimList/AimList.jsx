@@ -8,7 +8,6 @@ const AimList = ({ aims, handleComplete, handleDelete, handleEditStart }) => {
           <li key={aim.id}>
             <div>{aim.title}</div>
             <div>{aim.description}</div>
-            <div>{aim.photo}</div>
             <div>
               <button onClick={() => handleDelete(aim.id)}>Видалити</button>
               {!aim.completed && (

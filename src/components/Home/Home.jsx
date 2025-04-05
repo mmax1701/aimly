@@ -7,9 +7,12 @@ import EditAimForm from '../EditAimForm/EditAimForm'; // Импортируем 
 import { nanoid } from 'nanoid';
 import AddAim from '../AddAim/AddAim';
 
+Modal.setAppElement('#root');
+
 const Home = () => {
   const [aims, setAims] = useState(aim);
   const [editingAim, setEditingAim] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const handleComplete = aimId => {
     setAims(prevAims =>
@@ -25,7 +28,8 @@ const Home = () => {
 
   const handleAddAim = newAim => {
     const aimWithId = { ...newAim, id: nanoid() };
-    setAims(prevAims => [...prevAims, aimWithId]);
+    setAims(prevAims => [aimWithId, ...prevAims]);
+    setIsAddModalOpen(false);
   };
 
   const handleEditStart = aimId => {
@@ -49,8 +53,16 @@ const Home = () => {
   return (
     <div>
       <div>
-        <div>x</div>
-        <p>Привіт, name</p>
+        <div>logo</div>
+        <div>search</div>
+        <div>
+          <div>photo_user</div>
+          <div>name_user</div>
+          <div>logout</div>
+        </div>
+      </div>
+      <div>
+        <button onClick={() => setIsAddModalOpen(true)}>Додати ціль</button>
       </div>
 
       {aims.length > 0 ? (
@@ -80,18 +92,30 @@ const Home = () => {
           )}
         </div>
       ) : (
-        <div>
-          <div>Додай свою ціль</div>
-          <AddAim onAddAim={handleAddAim} />
-        </div>
+        <div>Наразі цілі відсутні</div>
       )}
 
-      <Modal isOpen={!!editingAim} onRequestClose={handleEditCancel}>
+      <Modal
+        isOpen={isAddModalOpen}
+        onRequestClose={() => setIsAddModalOpen(false)}
+      >
+        <AddAim
+          onAddAim={handleAddAim}
+          onCancel={() => setIsAddModalOpen(false)}
+        />
+      </Modal>
+
+      <Modal isOpen={!!editingAim} onRequestClose={() => setEditingAim(null)}>
         {editingAim && (
           <EditAimForm
             aim={editingAim}
-            onSave={handleEditSave}
-            onCancel={handleEditCancel}
+            onSave={updatedAim => {
+              setAims(prev =>
+                prev.map(aim => (aim.id === updatedAim.id ? updatedAim : aim))
+              );
+              setEditingAim(null);
+            }}
+            onCancel={() => setEditingAim(null)}
           />
         )}
       </Modal>
